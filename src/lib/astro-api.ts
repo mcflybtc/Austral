@@ -238,3 +238,72 @@ export async function getGalacticCoords(when: Date | string, bodies: BodyName[] 
   }
   return out;
 }
+
+export async function getAspects(year: number){
+  const start = new Date(Date.UTC(year,0,1));
+  const end = new Date(Date.UTC(year+1,0,1));
+  const timeStart = makeTime(start);
+  const timeEnd = makeTime(end);
+  const aspects = [
+    { angle: 0, name: "Conjunction" },
+    { angle: 60, name: "Sextile" },
+    { angle: 90, name: "Square" },
+    { angle: 120, name: "Trine" },
+    { angle: 180, name: "Opposition" }
+  ];
+  const bodies: BodyName[] = ["Mercury","Venus","Mars","Jupiter","Saturn","Uranus","Neptune","Pluto"];
+  const events: any[] = [];
+
+  // @ts-ignore
+  const pair = (Astro as any).PairLongitude;
+  if (!pair) return { year, events };
+  function lonOff(x: number){
+    let offset = x;
+    while (offset <= -180) offset += 360;
+    while (offset > 180) offset -= 360;
+    return offset;
+  }
+
+  function diff(b1: BodyName, b2: BodyName, angle: number, time: any){
+    const lon = pair(b1, b2, time);
+    return lonOff(lon - angle);
+  }
+  function refine(b1: BodyName, b2: BodyName, angle: number, ta: any, tb: any){
+    let va = diff(b1,b2,angle,ta);
+    let vb = diff(b1,b2,angle,tb);
+    for(let i=0;i<20;i++){
+      const tm = ta.AddDays((tb.tt - ta.tt)/2);
+      const vm = diff(b1,b2,angle,tm);
+      if ((va < 0 && vm > 0) || (va > 0 && vm < 0)){
+        tb = tm; vb = vm;
+      } else {
+        ta = tm; va = vm;
+      }
+      if (Math.abs(tb.tt - ta.tt)*86400 < 60) break; // 1 minute
+    }
+    return Math.abs(va) < Math.abs(vb) ? ta : tb;
+  }
+
+  for(let i=0;i<bodies.length;i++){
+    for(let j=i+1;j<bodies.length;j++){
+      const b1 = bodies[i];
+      const b2 = bodies[j];
+      for(const asp of aspects){
+        let t1:any = timeStart;
+        let v1 = diff(b1,b2,asp.angle,t1);
+        while(t1.tt < timeEnd.tt){
+          const t2 = t1.AddDays(1);
+          const v2 = diff(b1,b2,asp.angle,t2);
+          if (v1 === 0 || v1*v2 <= 0){
+            const te = refine(b1,b2,asp.angle,t1,t2);
+            events.push({ body1: b1, body2: b2, aspect: asp.name, time: te.toString() });
+          }
+          t1 = t2; v1 = v2;
+        }
+      }
+    }
+  }
+
+  events.sort((a,b)=> new Date(a.time).getTime() - new Date(b.time).getTime());
+  return { year, events };
+}
