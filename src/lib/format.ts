@@ -33,7 +33,7 @@ export function raDegToHms(deg?: number|null) {
   return `${String(H).padStart(2,'0')}h ${String(M).padStart(2,'0')}m ${String(S).padStart(2,'0')}s`;
 }
 export function formatInTz(date: Date, tz: string): string {
-  const fmt = new Intl.DateTimeFormat('pt-BR', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false });
+  const fmt = new Intl.DateTimeFormat('en-US', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false });
   const parts = Object.fromEntries(fmt.formatToParts(date).map(p => [p.type, p.value]));
   return `${parts.year}-${parts.month}-${parts.day} ${parts.hour}:${parts.minute}`;
 }
@@ -51,4 +51,9 @@ export function formatMaybeDate(value: any, tz: string): string {
   } catch {
     return String(value ?? '');
   }
+}
+
+export function fmtNumber(v?: number | null, digits = 2) {
+  if (v == null || !isFinite(v)) return "—";
+  return Number(v).toFixed(digits);
 }
