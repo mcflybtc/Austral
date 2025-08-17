@@ -131,12 +131,11 @@ export async function getSeasons(year: number){
   try {
     // @ts-ignore
     const s = (Astro as any).Seasons ? (Astro as any).Seasons(year) : null;
-    const entries = s ? [
-      { event: "MarchEquinox",      localTime: s.march_equinox?.toString?.() || String(s.march_equinox) },
-      { event: "JuneSolstice",      localTime: s.june_solstice?.toString?.() || String(s.june_solstice) },
-      { event: "SeptemberEquinox",  localTime: s.september_equinox?.toString?.() || String(s.september_equinox) },
-      { event: "DecemberSolstice",  localTime: s.december_solstice?.toString?.() || String(s.december_solstice) }
-    ] : [];
+    const entries: any[] = [];
+    if (s?.march_equinox)     entries.push({ event: "MarchEquinox",     localTime: s.march_equinox?.toString?.() || String(s.march_equinox) });
+    if (s?.june_solstice)     entries.push({ event: "JuneSolstice",     localTime: s.june_solstice?.toString?.() || String(s.june_solstice) });
+    if (s?.september_equinox) entries.push({ event: "SeptemberEquinox", localTime: s.september_equinox?.toString?.() || String(s.september_equinox) });
+    if (s?.december_solstice) entries.push({ event: "DecemberSolstice", localTime: s.december_solstice?.toString?.() || String(s.december_solstice) });
     return { year, entries };
   } catch { return { year, entries: [] }; }
 }
@@ -150,7 +149,12 @@ export async function getElongations(body: "Mercury" | "Venus", startFrom: Date 
     const SearchMaxElongation = (Astro as any).SearchMaxElongation;
     if (SearchMaxElongation) {
       let me = SearchMaxElongation(body, time);
-      let c = 0; while (me && c < count) { events.push({ time: me.time?.toString?.() || String(me.time), elongationDeg: me.elong, visibility: me.kind }); me = me.next ? me.next() : null; c++; }
+      let c = 0;
+      while (me && c < count) {
+        events.push({ time: me.time?.toString?.() || String(me.time), elongationDeg: me.elongation, visibility: me.visibility });
+        me = me.next ? me.next() : null;
+        c++;
+      }
     }
   } catch {}
   return { body, startFrom: date.toISOString(), events };
@@ -210,23 +214,27 @@ export async function getGalacticCoords(when: Date | string, bodies: BodyName[] 
   const date = typeof when === "string" ? new Date(when) : when;
   const time = makeTime(date);
   const out:any[] = [];
-  try {
-    // @ts-ignore
-    const rot = (Astro as any).Rotation_EQJ_GAL; 
-    // @ts-ignore
-    const rotVec = (Astro as any).RotateVector; 
-    // @ts-ignore
-    const sphere = (Astro as any).SphereFromVector;
-    for (const b of bodies) {
-      // @ts-ignore
-      if ((Astro as any).GeoVector && rot && rotVec && sphere) {
-        // @ts-ignore
-        const eqj = (Astro as any).GeoVector(b, time, false);
-        const v = rotVec(rot, eqj);
+  // @ts-ignore
+  const rotFunc = (Astro as any).Rotation_EQJ_GAL;
+  // @ts-ignore
+  const rotVec = (Astro as any).RotateVector;
+  // @ts-ignore
+  const sphere = (Astro as any).SphereFromVector;
+  // @ts-ignore
+  const geo = (Astro as any).GeoVector;
+  for (const b of bodies) {
+    try {
+      if (rotFunc && rotVec && sphere && geo) {
+        const eqj = geo(b, time, false);
+        const v = rotVec(rotFunc(), eqj);
         const s = sphere(v);
         out.push({ name: b, lonDeg: s?.lon, latDeg: s?.lat });
+      } else {
+        out.push({ name: b, lonDeg: null, latDeg: null });
       }
+    } catch {
+      out.push({ name: b, lonDeg: null, latDeg: null });
     }
-  } catch {}
+  }
   return out;
 }

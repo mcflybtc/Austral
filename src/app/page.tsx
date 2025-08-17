@@ -52,7 +52,11 @@ function Table<T>({ cols, rows, empty }: { cols: Col[]; rows: T[]; empty: string
             <tr><td colSpan={cols.length} className="px-4 py-6 text-center text-xs text-zinc-400">{empty}</td></tr>
           ) : rows.map((row:any, idx)=> (
             <tr key={idx} className="border-t border-zinc-100 hover:bg-zinc-50/60 transition-colors">
-              {cols.map(c => <td key={c.key} className="px-4 py-2 whitespace-nowrap text-zinc-800 text-sm">{String(row[c.key as keyof typeof row] ?? "—")}</td>)}
+              {cols.map(c => {
+                const v = row[c.key as keyof typeof row];
+                const txt = v==null || typeof v === 'object' ? '—' : String(v);
+                return <td key={c.key} className="px-4 py-2 whitespace-nowrap text-zinc-800 text-sm">{txt}</td>;
+              })}
             </tr>
           ))}
         </tbody>
@@ -130,7 +134,12 @@ export default function Page() {
 
       const ecL = await API.getEclipses(observer, date, "lunar");
       const ecS = await API.getEclipses(observer, date, "solar-local");
-      setEclipses([...(ecL?.events||[]), ...(ecS?.events||[])].map((e:any)=>({ ...e, time: formatMaybeDate(e.time, tz), magnitudeFmt: fmtNumber(e.magnitude) })));
+      setEclipses([...(ecL?.events||[]), ...(ecS?.events||[])].map((e:any)=>({
+        ...e,
+        time: formatMaybeDate(e.time, tz),
+        magnitudeFmt: typeof e.magnitude === 'number' ? fmtNumber(e.magnitude) : (e.magnitude ?? '—'),
+        path: typeof e.path === 'string' ? e.path : '—'
+      })));
 
       const apSun  = await API.getApsides("Earth", date, 2);
       const apMoon = await API.getApsides("Moon",  date, 2);
