@@ -211,6 +211,30 @@ export async function getLunarPhases(month: number, year: number) {
   return { month, year, phases: out };
 }
 
+export async function getMoonPhase(
+  targetLon: number,
+  startFrom: Date | string,
+  limitDays = 40
+) {
+  const date = typeof startFrom === 'string' ? new Date(startFrom) : startFrom;
+  const time = makeTime(date);
+  try {
+    // @ts-ignore
+    const SearchMoonPhase = (Astro as any).SearchMoonPhase;
+    const t = SearchMoonPhase
+      ? SearchMoonPhase(targetLon, time, limitDays)
+      : null;
+    return {
+      targetLon,
+      startFrom: date.toISOString(),
+      limitDays,
+      time: t?.toString?.() || (t ? String(t) : null),
+    };
+  } catch {
+    return { targetLon, startFrom: date.toISOString(), limitDays, time: null };
+  }
+}
+
 export async function getSeasons(year: number) {
   try {
     // @ts-ignore
@@ -241,6 +265,30 @@ export async function getSeasons(year: number) {
     return { year, entries };
   } catch {
     return { year, entries: [] };
+  }
+}
+
+export async function getSunLongitude(
+  targetLon: number,
+  startFrom: Date | string,
+  limitDays = 365
+) {
+  const date = typeof startFrom === 'string' ? new Date(startFrom) : startFrom;
+  const time = makeTime(date);
+  try {
+    // @ts-ignore
+    const SearchSunLongitude = (Astro as any).SearchSunLongitude;
+    const t = SearchSunLongitude
+      ? SearchSunLongitude(targetLon, time, limitDays)
+      : null;
+    return {
+      targetLon,
+      startFrom: date.toISOString(),
+      limitDays,
+      time: t?.toString?.() || (t ? String(t) : null),
+    };
+  } catch {
+    return { targetLon, startFrom: date.toISOString(), limitDays, time: null };
   }
 }
 
@@ -291,6 +339,18 @@ export async function getEclipses(
           time: e.peak?.toString?.() || String(e.peak),
           magnitude: e?.kind || null,
           path: null,
+        });
+    }
+    // @ts-ignore
+    if (scope === 'solar-global' && (Astro as any).SearchGlobalSolarEclipse) {
+      // @ts-ignore
+      const e = (Astro as any).SearchGlobalSolarEclipse(time);
+      if (e)
+        events.push({
+          type: e?.kind || 'solar',
+          time: e.peak?.toString?.() || String(e.peak),
+          magnitude: e?.obscuration ?? null,
+          path: 'global',
         });
     }
     // @ts-ignore
