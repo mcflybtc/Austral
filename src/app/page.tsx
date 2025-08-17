@@ -354,8 +354,13 @@ export default function Page() {
 
       const ecL = await API.getEclipses(observer, date, 'lunar');
       const ecS = await API.getEclipses(observer, date, 'solar-local');
+      const ecG = await API.getEclipses(observer, date, 'solar-global');
       setEclipses(
-        [...(ecL?.events || []), ...(ecS?.events || [])].map((e: any) => ({
+        [
+          ...(ecL?.events || []),
+          ...(ecS?.events || []),
+          ...(ecG?.events || []),
+        ].map((e: any) => ({
           ...e,
           time: formatMaybeDate(e.time, tz),
           magnitudeFmt:
