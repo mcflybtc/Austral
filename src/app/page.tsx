@@ -2,6 +2,9 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AreaChartComponent } from '@/components/area-chart';
+import { DataTable } from '@/components/data-table';
+import { AstroCalculator } from '@/components/astro-calculator';
+import { SeasonsCalendar } from '@/components/seasons-calendar';
 
 const blocks = [
   { id: 603943, hash: '0x1a2b' },
@@ -27,20 +30,9 @@ const stackingData = [
 export default function Page() {
   return (
     <main className="p-6 space-y-8">
-      <section>
-        <div className="flex items-center justify-between mb-4">
-          <h1 className="text-2xl font-bold">Recent blocks</h1>
-          <button className="text-sm text-blue-600">View all blocks</button>
-        </div>
-        <div className="flex gap-4 overflow-x-auto pb-4">
-          {blocks.map((b) => (
-            <Card key={b.id} className="min-w-[120px]">
-              <CardHeader className="p-4">
-                <CardTitle className="text-sm font-medium">#{b.id}</CardTitle>
-              </CardHeader>
-            </Card>
-          ))}
-        </div>
+      <section className="space-y-4">
+        <h1 className="text-2xl font-bold">Blocos recentes</h1>
+        <DataTable data={blocks} />
       </section>
       <div className="grid gap-4 md:grid-cols-2">
         <Card>
@@ -64,6 +56,24 @@ export default function Page() {
               <p className="text-sm text-muted-foreground">Blocks mined</p>
               <p className="text-2xl font-bold">5662</p>
             </div>
+          </CardContent>
+        </Card>
+      </div>
+      <div className="grid gap-4 md:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>Calculadora de Aspectos</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <AstroCalculator />
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Seasons & Eclipses</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <SeasonsCalendar />
           </CardContent>
         </Card>
       </div>
