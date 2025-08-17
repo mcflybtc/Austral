@@ -1,8 +1,9 @@
 "use client";
 import React from "react";
 import * as API from "@/lib/astro-api";
-import { clampLatLon, fmtDeg, raDegToHms, formatMaybeDate } from "@/lib/format";
+import { clampLatLon, fmtDeg, fmtNumber, raDegToHms, formatMaybeDate } from "@/lib/format";
 import { Button } from "@/components/ui/button";
+import { CycleChart, CycleData } from "@/components/cycle-chart";
 
 type Frame = API.Frame;
 
@@ -36,13 +37,14 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
     </label>
   );
 }
-function Table<T>({ cols, rows, empty }: { cols: string[]; rows: T[]; empty: string }) {
+type Col = { key: string; label: string };
+function Table<T>({ cols, rows, empty }: { cols: Col[]; rows: T[]; empty: string }) {
   return (
     <div className="overflow-auto rounded-lg border border-zinc-200">
       <table className="w-full text-sm">
         <thead className="bg-zinc-50">
           <tr>
-            {cols.map(c => <th key={c} className="px-4 py-2 text-left font-medium text-zinc-600">{c}</th>)}
+            {cols.map(c => <th key={c.key} className="px-4 py-2 text-left font-medium text-zinc-600">{c.label}</th>)}
           </tr>
         </thead>
         <tbody>
@@ -50,7 +52,7 @@ function Table<T>({ cols, rows, empty }: { cols: string[]; rows: T[]; empty: str
             <tr><td colSpan={cols.length} className="px-4 py-6 text-center text-xs text-zinc-400">{empty}</td></tr>
           ) : rows.map((row:any, idx)=> (
             <tr key={idx} className="border-t border-zinc-100 hover:bg-zinc-50/60 transition-colors">
-              {cols.map(c => <td key={c} className="px-4 py-2 whitespace-nowrap text-zinc-800 text-sm">{String(row[c] ?? row[c as keyof typeof row] ?? "—")}</td>)}
+              {cols.map(c => <td key={c.key} className="px-4 py-2 whitespace-nowrap text-zinc-800 text-sm">{String(row[c.key as keyof typeof row] ?? "—")}</td>)}
             </tr>
           ))}
         </tbody>
@@ -80,6 +82,7 @@ export default function Page() {
   const [apsides, setApsides] = React.useState<any[]>([]);
   const [transits, setTransits] = React.useState<any|null>(null);
   const [galactic, setGalactic] = React.useState<any[]>([]);
+  const [cycleData, setCycleData] = React.useState<CycleData[]>([]);
 
   React.useEffect(()=>{ setLat(city.latitude); setLon(city.longitude); setTz(city.timezone); },[city]);
 
@@ -107,6 +110,7 @@ export default function Page() {
         raDegFmt: fmtDeg(p.raDeg, true),
         raHms: raDegToHms(p.raDeg),
         decDegFmt: fmtDeg(p.decDeg, true),
+        magnitude: fmtNumber(p.magnitude)
       })));
 
       const rsBodies = frame === "geocentric" ? [...API.ALL_BODIES] : ["Sun","Moon"];
@@ -122,15 +126,15 @@ export default function Page() {
 
       const elMe = await API.getElongations("Mercury", date, 2);
       const elVe = await API.getElongations("Venus",   date, 2);
-      setElongations([...(elMe?.events||[]), ...(elVe?.events||[])].map((e:any)=>({ ...e, time: formatMaybeDate(e.time, tz) })));
+      setElongations([...(elMe?.events||[]), ...(elVe?.events||[])].map((e:any)=>({ ...e, time: formatMaybeDate(e.time, tz), elongationFmt: fmtNumber(e.elongationDeg) })));
 
       const ecL = await API.getEclipses(observer, date, "lunar");
       const ecS = await API.getEclipses(observer, date, "solar-local");
-      setEclipses([...(ecL?.events||[]), ...(ecS?.events||[])].map((e:any)=>({ ...e, time: formatMaybeDate(e.time, tz) })));
+      setEclipses([...(ecL?.events||[]), ...(ecS?.events||[])].map((e:any)=>({ ...e, time: formatMaybeDate(e.time, tz), magnitudeFmt: fmtNumber(e.magnitude) })));
 
       const apSun  = await API.getApsides("Earth", date, 2);
       const apMoon = await API.getApsides("Moon",  date, 2);
-      setApsides([...(apSun?.events||[]), ...(apMoon?.events||[])].map((a:any)=>({ ...a, time: formatMaybeDate(a.time, tz) })));
+      setApsides([...(apSun?.events||[]), ...(apMoon?.events||[])].map((a:any)=>({ ...a, time: formatMaybeDate(a.time, tz), distanceFmt: fmtNumber(a.distance) })));
 
       const trM = await API.getTransits("Mercury", date);
       const trV = await API.getTransits("Venus",   date);
@@ -138,7 +142,20 @@ export default function Page() {
       setTransits(tEvt ? { body: tEvt.body || (trM?.event ? "Mercury" : (trV?.event ? "Venus" : "")), start: formatMaybeDate(tEvt.start, tz), peak: formatMaybeDate(tEvt.peak, tz), end: formatMaybeDate(tEvt.end, tz) } : null);
 
       const gc = await API.getGalacticCoords(date, ["Sun","Moon"]);
-      setGalactic(gc||[]);
+      setGalactic((gc||[]).map((g:any)=>({ ...g, lonFmt: fmtNumber(g.lonDeg), latFmt: fmtNumber(g.latDeg) })));
+
+      const chartBodies = ["Sun","Moon"];
+      const days = 30;
+      const series: CycleData[] = [];
+      for (let i = days - 1; i >= 0; i--) {
+        const d = new Date(date);
+        d.setDate(d.getDate() - i);
+        const p = await API.getPositions(observer, frame, d, chartBodies);
+        const sun = p.find((x:any)=>x.name==="Sun");
+        const moon = p.find((x:any)=>x.name==="Moon");
+        series.push({ date: d.toISOString().slice(0,10), Sun: sun?.eclipticLonDeg ?? 0, Moon: moon?.eclipticLonDeg ?? 0 });
+      }
+      setCycleData(series);
 
     } catch(e:any) { setErr(e?.message||String(e)); }
     finally { setLoading(false); }
@@ -151,14 +168,14 @@ export default function Page() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-zinc-100 to-white text-zinc-900">
       <header className="mx-auto max-w-6xl px-4 py-6">
-        <h1 className="text-lg font-semibold">Lyra Orrery — Dados Reais via <code>astronomy.ts</code></h1>
-        <p className="text-xs text-zinc-500 mt-1">Mostrando signo + grau no signo, constelação IAU e RA/Dec em graus.</p>
+        <h1 className="text-lg font-semibold">Lyra Orrery — Real Data via <code>astronomy.ts</code></h1>
+        <p className="text-xs text-zinc-500 mt-1">Showing zodiac sign + degree, IAU constellation, and RA/Dec in degrees.</p>
       </header>
 
       <main className="mx-auto max-w-6xl px-4 pb-16 grid gap-4">
-        <Section title="Parâmetros de Observação">
+        <Section title="Observation Parameters">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <Field label="Cidade (menu)">
+            <Field label="City (menu)">
               <select className="h-10 rounded-lg border border-zinc-300 bg-white px-3 text-sm hover:shadow-md transition" value={cityId} onChange={(e)=>setCityId(e.target.value)}>
                 {getCityOptions()}
               </select>
@@ -172,45 +189,70 @@ export default function Page() {
                 <label className="inline-flex items-center gap-2"><input type="radio" name="frame" checked={frame==="heliocentric"} onChange={()=>setFrame("heliocentric")} /><span>heliocentric</span></label>
               </div>
             </Field>
-            <Field label="Data/hora (local)"><input type="datetime-local" className="h-10 rounded-lg border border-zinc-300 bg-white px-3 text-sm" value={when} onChange={(e)=>setWhen(e.target.value)} /></Field>
+            <Field label="Date/time (local)"><input type="datetime-local" className="h-10 rounded-lg border border-zinc-300 bg-white px-3 text-sm" value={when} onChange={(e)=>setWhen(e.target.value)} /></Field>
           </div>
           <div className="mt-4 flex items-center gap-4">
-            <Button onClick={handleGenerate} className="h-10 px-4">{loading ? <span className="animate-pulse">Calculando…</span> : "Gerar dados reais"}</Button>
+            <Button onClick={handleGenerate} className="h-10 px-4">{loading ? <span className="animate-pulse">Calculating…</span> : "Generate real data"}</Button>
             {err && <span className="text-xs text-red-600">{err}</span>}
           </div>
         </Section>
 
-        <Section title="Posições aparentes (grau no signo & constelação)">
+        <Section title="Apparent Positions (sign degree & constellation)">
           <Table
-            cols={["name","altFmt","azFmt","eclLonFmt","eclLatFmt","zodiac","zodiacDegFmt","constellation","raDegFmt","raHms","decDegFmt","magnitude"]}
+            cols={[
+              {key:"name",label:"Name"},
+              {key:"altFmt",label:"Alt"},
+              {key:"azFmt",label:"Az"},
+              {key:"eclLonFmt",label:"Ecl Lon"},
+              {key:"eclLatFmt",label:"Ecl Lat"},
+              {key:"zodiac",label:"Zodiac"},
+              {key:"zodiacDegFmt",label:"Deg in Sign"},
+              {key:"constellation",label:"Constellation"},
+              {key:"raDegFmt",label:"RA°"},
+              {key:"raHms",label:"RA hms"},
+              {key:"decDegFmt",label:"Dec°"},
+              {key:"magnitude",label:"Mag"}
+            ]}
             rows={positions}
-            empty="Sem dados. Clique em ‘Gerar dados reais’."
+            empty="No data. Click 'Generate real data'."
           />
         </Section>
 
-        <Section title="Nascer / Culminação / Pôr">
-          <p className="text-xs text-zinc-500 mb-2">Frame geocentric → TODOS (Sun→Pluto). Heliocentric → Sun/Moon.</p>
-          <Table cols={["name","rise","transit","set","timezone"]} rows={riseSet} empty="Aguardando cálculo…" />
+        <Section title="Rise / Transit / Set">
+          <p className="text-xs text-zinc-500 mb-2">Geocentric frame → all bodies (Sun→Pluto). Heliocentric → Sun/Moon.</p>
+          <Table cols={[
+            {key:"name",label:"Name"},
+            {key:"rise",label:"Rise"},
+            {key:"transit",label:"Transit"},
+            {key:"set",label:"Set"},
+            {key:"timezone",label:"Time zone"}
+          ]} rows={riseSet} empty="Waiting for calculation…" />
         </Section>
 
-        <Section title="Fases Lunares (mês) & Estações (ano)">
+        <Section title="Lunar Phases (month) & Seasons (year)">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div><h3 className="text-sm font-medium mb-2">Fases</h3><Table cols={["phase","localTime","constellation"]} rows={phases} empty="—" /></div>
-            <div><h3 className="text-sm font-medium mb-2">Estações</h3><Table cols={["event","localTime"]} rows={seasons} empty="—" /></div>
+            <div><h3 className="text-sm font-medium mb-2">Phases</h3><Table cols={[{key:"phase",label:"Phase"},{key:"localTime",label:"Local Time"},{key:"constellation",label:"Constellation"}]} rows={phases} empty="—" /></div>
+            <div><h3 className="text-sm font-medium mb-2">Seasons</h3><Table cols={[{key:"event",label:"Event"},{key:"localTime",label:"Local Time"}]} rows={seasons} empty="—" /></div>
           </div>
         </Section>
 
-        <Section title="Eventos Especiais">
+        <Section title="Special Events">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div><h3 className="text-sm font-medium mb-2">Max Elongations</h3><Table cols={["time","elongationDeg","visibility"]} rows={elongations} empty="—" /></div>
-            <div><h3 className="text-sm font-medium mb-2">Eclipses</h3><Table cols={["type","time","magnitude","path"]} rows={eclipses} empty="—" /></div>
-            <div><h3 className="text-sm font-medium mb-2">Apsides</h3><Table cols={["kind","time","distance"]} rows={apsides} empty="—" /></div>
-            <div><h3 className="text-sm font-medium mb-2">Transits</h3><Table cols={["body","start","peak","end"]} rows={transits ? [transits] : []} empty="—" /></div>
+            <div><h3 className="text-sm font-medium mb-2">Max Elongations</h3><Table cols={[{key:"time",label:"Time"},{key:"elongationFmt",label:"Elong°"},{key:"visibility",label:"Visibility"}]} rows={elongations} empty="—" /></div>
+            <div><h3 className="text-sm font-medium mb-2">Eclipses</h3><Table cols={[{key:"type",label:"Type"},{key:"time",label:"Time"},{key:"magnitudeFmt",label:"Magnitude"},{key:"path",label:"Path"}]} rows={eclipses} empty="—" /></div>
+            <div><h3 className="text-sm font-medium mb-2">Apsides</h3><Table cols={[{key:"kind",label:"Kind"},{key:"time",label:"Time"},{key:"distanceFmt",label:"Distance"}]} rows={apsides} empty="—" /></div>
+            <div><h3 className="text-sm font-medium mb-2">Transits</h3><Table cols={[{key:"body",label:"Body"},{key:"start",label:"Start"},{key:"peak",label:"Peak"},{key:"end",label:"End"}]} rows={transits ? [transits] : []} empty="—" /></div>
           </div>
         </Section>
 
-        <Section title="Coordenadas Galácticas (Sun/Moon)">
-          <Table cols={["name","lonDeg","latDeg"]} rows={galactic} empty="—" />
+        {cycleData.length>0 && (
+          <Section title="Ecliptic Longitude Trend (Sun/Moon)">
+            <CycleChart data={cycleData} />
+          </Section>
+        )}
+
+        <Section title="Galactic Coordinates (Sun/Moon)">
+          <Table cols={[{key:"name",label:"Name"},{key:"lonFmt",label:"Lon°"},{key:"latFmt",label:"Lat°"}]} rows={galactic} empty="—" />
         </Section>
 
         <footer className="text-xs text-zinc-400 mt-4">
