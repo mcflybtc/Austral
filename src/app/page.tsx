@@ -2,6 +2,7 @@
 import React from "react";
 import * as API from "@/lib/astro-api";
 import { clampLatLon, fmtDeg, raDegToHms, formatMaybeDate } from "@/lib/format";
+import { Button } from "@/components/ui/button";
 
 type Frame = API.Frame;
 
@@ -150,7 +151,7 @@ export default function Page() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-zinc-100 to-white text-zinc-900">
       <header className="mx-auto max-w-6xl px-4 py-6">
-        <h1 className="text-lg font-semibold">Astro App — Dados Reais via <code>astronomy.ts</code></h1>
+        <h1 className="text-lg font-semibold">Lyra Orrery — Dados Reais via <code>astronomy.ts</code></h1>
         <p className="text-xs text-zinc-500 mt-1">Mostrando signo + grau no signo, constelação IAU e RA/Dec em graus.</p>
       </header>
 
@@ -174,7 +175,7 @@ export default function Page() {
             <Field label="Data/hora (local)"><input type="datetime-local" className="h-10 rounded-lg border border-zinc-300 bg-white px-3 text-sm" value={when} onChange={(e)=>setWhen(e.target.value)} /></Field>
           </div>
           <div className="mt-4 flex items-center gap-4">
-            <button onClick={handleGenerate} className="h-10 px-4 rounded-lg bg-zinc-900 text-white text-sm hover:bg-zinc-800 hover:shadow-md transition">{loading ? <span className="animate-pulse">Calculando…</span> : "Gerar dados reais"}</button>
+            <Button onClick={handleGenerate} className="h-10 px-4">{loading ? <span className="animate-pulse">Calculando…</span> : "Gerar dados reais"}</Button>
             {err && <span className="text-xs text-red-600">{err}</span>}
           </div>
         </Section>
@@ -213,7 +214,7 @@ export default function Page() {
         </Section>
 
         <footer className="text-xs text-zinc-400 mt-4">
-          <p>© {new Date().getFullYear()} Astro App — Powered by <code>astronomy.ts</code>. Design: Tailwind (zinc).</p>
+          <p>© {new Date().getFullYear()} Lyra Orrery — Powered by <code>astronomy.ts</code>. Design: Tailwind, shadcn/ui.</p>
         </footer>
       </main>
     </div>

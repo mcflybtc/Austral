@@ -1,12 +1,22 @@
 
-# Astro App (Next.js + Tailwind + astronomy.ts)
+# Lyra Orrery (Next.js + Tailwind + shadcn/ui + astronomy.ts)
 
-Este repositório usa `src/lib/astronomy.ts` como **fonte de verdade**.
+Aplicação Next.js que usa `src/lib/astronomy.ts` como **fonte de verdade** para dados astronômicos.
 
-## Rodar
+## Rodar localmente
+Requisitos: Node.js 18+ e npm.
+
 ```bash
 npm install
 npm run dev
+```
+Acesse <http://localhost:3000> para ver a interface. O botão "Gerar dados reais" utiliza componentes do shadcn/ui e chama o arquivo `astronomy.ts` via rotas API.
+
+## Verificar API
+As rotas REST estão em `/app/api/*`. Exemplo para posições:
+
+```bash
+curl "http://localhost:3000/api/positions?lat=-3.7&lon=-38.5"
 ```
 
 ## Build
@@ -20,16 +30,13 @@ npm start
 npm test
 ```
 
-## Endpoints REST
-Veja `/app/api/*` (positions, riseset, phases, seasons, elongations, eclipses, apsides, transits, galactic).
-
 ## Publicar no GitHub (sem Git instalado)
 - Faça download deste `.tar.gz` ou `.zip`.
 - Descompacte localmente.
-- **Abra um repositório no GitHub** (novo, vazio) e copie a URL (ex.: `git@github.com:SEU_USER/astro-app.git`).
+- **Abra um repositório no GitHub** (novo, vazio) e copie a URL (ex.: `git@github.com:SEU_USER/lyra-orrery.git`).
 
 Se tiver Git instalado, use o script:
 
 ```bash
-bash init-git-and-push.sh git@github.com:SEU_USER/astro-app.git
+bash init-git-and-push.sh git@github.com:SEU_USER/lyra-orrery.git
 ```
