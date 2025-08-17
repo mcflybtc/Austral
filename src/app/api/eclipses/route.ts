@@ -1,13 +1,10 @@
 import { NextRequest } from "next/server";
 import * as API from "@/lib/astro-api";
-import { num, str, jsonError } from "@/lib/api-utils";
+import { parseQuery, str, jsonError } from "@/lib/api-utils";
 
 export async function GET(req: NextRequest) {
   try {
-    const url = new URL(req.url);
-    const lat = num(url.searchParams.get("lat"), -3.71722);
-    const lon = num(url.searchParams.get("lon"), -38.5434);
-    const tz = str(url.searchParams.get("tz"), "America/Fortaleza");
+    const { url, lat, lon, tz } = parseQuery(req);
     const start = str(url.searchParams.get("start"), new Date().toISOString());
     const scope = str(url.searchParams.get("scope"), "lunar") as "solar-global" | "solar-local" | "lunar";
     const data = await API.getEclipses({ latitude: lat, longitude: lon, timezone: tz }, start, scope);
