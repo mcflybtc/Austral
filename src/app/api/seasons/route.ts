@@ -1,17 +1,14 @@
 import { NextRequest } from "next/server";
-  import * as API from "@/lib/astro-api";
-
-  function num(v: string | null, d: number) {
-    const n = v ? Number(v) : NaN;
-    return Number.isFinite(n) ? n : d;
-  }
-  function str(v: string | null, d = "") {
-    return v ?? d;
-  }
+import * as API from "@/lib/astro-api";
+import { num, jsonError } from "@/lib/api-utils";
 
 export async function GET(req: NextRequest) {
-  const url = new URL(req.url);
-  const year  = num(url.searchParams.get("year"), new Date().getFullYear());
-  const data = await API.getSeasons(year);
-  return Response.json({ ok: true, data });
+  try {
+    const url = new URL(req.url);
+    const year = num(url.searchParams.get("year"), new Date().getFullYear());
+    const data = await API.getSeasons(year);
+    return Response.json({ ok: true, data });
+  } catch (err) {
+    return jsonError(err);
+  }
 }

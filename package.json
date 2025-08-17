@@ -1,5 +1,5 @@
 {
-  "name": "astro-app",
+  "name": "lyra-orrery",
   "private": true,
   "version": "0.1.0",
   "scripts": {
@@ -17,7 +17,8 @@
     "react-dom": "18.2.0",
     "tailwind-merge": "^3.3.1",
     "tailwindcss-animate": "^1.0.7",
-    "zustand": "^4.5.2"
+    "zustand": "^4.5.2",
+    "@radix-ui/react-slot": "^1.0.2"
   },
   "devDependencies": {
     "@types/node": "^20.11.30",
