@@ -31,14 +31,14 @@ declare namespace __next_route_internal_types__ {
   type StaticRoutes = 
     | `/`
     | `/api/apsides`
-    | `/api/eclipses`
     | `/api/elongations`
-    | `/api/galactic`
+    | `/api/eclipses`
     | `/api/phases`
     | `/api/positions`
+    | `/api/galactic`
+    | `/api/transits`
     | `/api/riseset`
     | `/api/seasons`
-    | `/api/transits`
   type DynamicRoutes<T extends string = string> = never
 
   type RouteImpl<T> = 
