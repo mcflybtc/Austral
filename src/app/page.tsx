@@ -18,6 +18,11 @@ const CITIES: City[] = [
   { id: "paris-fr", name: "Paris", country: "France", latitude: 48.8566, longitude: 2.3522, timezone: "Europe/Paris" },
   { id: "tokyo-jp", name: "Tokyo", country: "Japan", latitude: 35.6895, longitude: 139.6917, timezone: "Asia/Tokyo" },
   { id: "sydney-au", name: "Sydney", country: "Australia", latitude: -33.8688, longitude: 151.2093, timezone: "Australia/Sydney" },
+  { id: "mexico-city-mx", name: "Mexico City", country: "Mexico", latitude: 19.4326, longitude: -99.1332, timezone: "America/Mexico_City" },
+  { id: "berlin-de", name: "Berlin", country: "Germany", latitude: 52.52, longitude: 13.405, timezone: "Europe/Berlin" },
+  { id: "cape-town-za", name: "Cape Town", country: "South Africa", latitude: -33.9249, longitude: 18.4241, timezone: "Africa/Johannesburg" },
+  { id: "beijing-cn", name: "Beijing", country: "China", latitude: 39.9042, longitude: 116.4074, timezone: "Asia/Shanghai" },
+  { id: "buenos-aires-ar", name: "Buenos Aires", country: "Argentina", latitude: -34.6037, longitude: -58.3816, timezone: "America/Argentina/Buenos_Aires" },
 ];
 function getCityById(id?: string | null) { return CITIES.find(c => c.id === id); }
 
@@ -86,6 +91,7 @@ export default function Page() {
   const [apsides, setApsides] = React.useState<any[]>([]);
   const [transits, setTransits] = React.useState<any|null>(null);
   const [galactic, setGalactic] = React.useState<any[]>([]);
+  const [aspects, setAspects] = React.useState<any[]>([]);
   const [cycleData, setCycleData] = React.useState<CycleData[]>([]);
 
   React.useEffect(()=>{ setLat(city.latitude); setLon(city.longitude); setTz(city.timezone); },[city]);
@@ -153,6 +159,9 @@ export default function Page() {
       const gc = await API.getGalacticCoords(date, ["Sun","Moon"]);
       setGalactic((gc||[]).map((g:any)=>({ ...g, lonFmt: fmtNumber(g.lonDeg), latFmt: fmtNumber(g.latDeg) })));
 
+      const asp = await API.getAspects(date.getFullYear());
+      setAspects((asp?.events||[]).map((a:any)=>({ event: `${a.body1} ${a.aspect} ${a.body2}`, localTime: formatMaybeDate(a.time, tz) })));
+
       const chartBodies = ["Sun","Moon"];
       const days = 30;
       const series: CycleData[] = [];
@@ -176,12 +185,12 @@ export default function Page() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-zinc-100 to-white text-zinc-900">
-      <header className="mx-auto max-w-6xl px-4 py-6">
+      <header className="w-full px-4 py-6">
         <h1 className="text-lg font-semibold">Lyra Orrery — Real Data via <code>astronomy.ts</code></h1>
         <p className="text-xs text-zinc-500 mt-1">Showing zodiac sign + degree, IAU constellation, and RA/Dec in degrees.</p>
       </header>
 
-      <main className="mx-auto max-w-6xl px-4 pb-16 grid gap-4">
+      <main className="w-full px-4 pb-16 grid gap-4">
         <Section title="Observation Parameters">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <Field label="City (menu)">
@@ -249,9 +258,13 @@ export default function Page() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div><h3 className="text-sm font-medium mb-2">Max Elongations</h3><Table cols={[{key:"time",label:"Time"},{key:"elongationFmt",label:"Elong°"},{key:"visibility",label:"Visibility"}]} rows={elongations} empty="—" /></div>
             <div><h3 className="text-sm font-medium mb-2">Eclipses</h3><Table cols={[{key:"type",label:"Type"},{key:"time",label:"Time"},{key:"magnitudeFmt",label:"Magnitude"},{key:"path",label:"Path"}]} rows={eclipses} empty="—" /></div>
-            <div><h3 className="text-sm font-medium mb-2">Apsides</h3><Table cols={[{key:"kind",label:"Kind"},{key:"time",label:"Time"},{key:"distanceFmt",label:"Distance"}]} rows={apsides} empty="—" /></div>
-            <div><h3 className="text-sm font-medium mb-2">Transits</h3><Table cols={[{key:"body",label:"Body"},{key:"start",label:"Start"},{key:"peak",label:"Peak"},{key:"end",label:"End"}]} rows={transits ? [transits] : []} empty="—" /></div>
+          <div><h3 className="text-sm font-medium mb-2">Apsides</h3><Table cols={[{key:"kind",label:"Kind"},{key:"time",label:"Time"},{key:"distanceFmt",label:"Distance"}]} rows={apsides} empty="—" /></div>
+          <div><h3 className="text-sm font-medium mb-2">Transits</h3><Table cols={[{key:"body",label:"Body"},{key:"start",label:"Start"},{key:"peak",label:"Peak"},{key:"end",label:"End"}]} rows={transits ? [transits] : []} empty="—" /></div>
           </div>
+        </Section>
+
+        <Section title="Planetary Aspects (year)">
+          <Table cols={[{key:"localTime",label:"Local Time"},{key:"event",label:"Event"}]} rows={aspects} empty="—" />
         </Section>
 
         {cycleData.length>0 && (
