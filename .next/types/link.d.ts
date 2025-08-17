@@ -32,13 +32,13 @@ declare namespace __next_route_internal_types__ {
     | `/`
     | `/api/apsides`
     | `/api/elongations`
-    | `/api/eclipses`
     | `/api/phases`
-    | `/api/positions`
     | `/api/galactic`
-    | `/api/transits`
+    | `/api/eclipses`
+    | `/api/positions`
     | `/api/riseset`
     | `/api/seasons`
+    | `/api/transits`
   type DynamicRoutes<T extends string = string> = never
 
   type RouteImpl<T> = 
