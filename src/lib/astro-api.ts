@@ -6,6 +6,7 @@ import {
   signGlyph,
   zodiacDeg,
 } from '@/lib/format';
+import { BODY_DATA } from '@/lib/planet-data';
 
 export type Frame = 'geocentric' | 'heliocentric';
 export const ALL_BODIES = [
@@ -449,6 +450,20 @@ export async function getGalacticCoords(
     }
   }
   return out;
+}
+
+export async function getBodyData(
+  bodies: readonly BodyName[] | BodyName[] = ALL_BODIES,
+) {
+  return bodies.map((name) => {
+    const d = BODY_DATA.find((b) => b.name === name);
+    return {
+      name,
+      gm: d?.gm ?? null,
+      equatorialRadiusKm: d?.equatorialRadiusKm ?? null,
+      polarRadiusKm: d?.polarRadiusKm ?? null,
+    };
+  });
 }
 
 export async function getAspectsRange(
