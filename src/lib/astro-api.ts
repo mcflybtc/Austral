@@ -88,8 +88,8 @@ export async function getRiseSet(observer: {latitude:number; longitude:number; t
     try {
       let rise = null, set = null, transit = null;
       if (SearchRiseSet) {
-        const r = SearchRiseSet(name, ob, Direction.Rise, time);
-        const s = SearchRiseSet(name, ob, Direction.Set, time);
+        const r = SearchRiseSet(name, ob, Direction.Rise, time, 1);
+        const s = SearchRiseSet(name, ob, Direction.Set, time, 1);
         // @ts-ignore
         rise = r?.time?.toString?.() || (r?.date ?? null);
         // @ts-ignore
