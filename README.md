@@ -26,6 +26,7 @@ Search helpers include endpoints like:
 ```bash
 curl "http://localhost:3000/api/sunlongitude?targetLon=0&start=2024-03-19"
 curl "http://localhost:3000/api/moonphase?targetLon=90&start=2024-03-19"
+curl "http://localhost:3000/api/bodydata?bodies=Earth,Mars"
 ```
 
 ## Build
