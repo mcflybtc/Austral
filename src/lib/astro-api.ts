@@ -8,7 +8,7 @@ export type BodyName = typeof ALL_BODIES[number] | string;
 
 export function makeTime(date: Date){
   // @ts-ignore
-  return (Astro as any).MakeTime ? (Astro as any).MakeTime(date) : ((Astro as any).Time ? new (Astro as any).Time(date) : date);
+  return (Astro as any).MakeTime ? (Astro as any).MakeTime(date) : date;
 }
 export function makeObserver(lat:number, lon:number){
   // @ts-ignore
@@ -46,7 +46,8 @@ export async function getPositions(observer: {latitude:number; longitude:number;
         // @ts-ignore
         decDeg = Number(eq.dec);
         // @ts-ignore
-        const hor = (Astro as any).Horizon(time, ob, eq.ra, eq.dec, (Astro as any).Refraction?.Normal ?? 1);
+        // @ts-ignore
+        const hor = (Astro as any).Horizon(time, ob, eq.ra, eq.dec, "normal");
         // @ts-ignore
         alt = Number(hor.altitude); az = Number(hor.azimuth);
         // @ts-ignore
@@ -80,8 +81,7 @@ export async function getRiseSet(observer: {latitude:number; longitude:number; t
   const SearchRiseSet = (Astro as any).SearchRiseSet; 
   // @ts-ignore
   const SearchHourAngle = (Astro as any).SearchHourAngle; 
-  // @ts-ignore
-  const Direction = (Astro as any).Direction || { Rise: 1, Set: -1 };
+  const Direction = { Rise: 1, Set: -1 };
   const out:any[] = [];
 
   for (const name of bodies) {
@@ -169,7 +169,8 @@ export async function getEclipses(observer: {latitude:number; longitude:number; 
     }
     // @ts-ignore
     if (scope === "solar-local" && (Astro as any).SearchLocalSolarEclipse) {
-      const loc = { latitude: observer.latitude, longitude: observer.longitude, height: 0 };
+      // @ts-ignore
+      const loc = makeObserver(observer.latitude, observer.longitude);
       // @ts-ignore
       const e = (Astro as any).SearchLocalSolarEclipse(time, loc);
       if (e) events.push({ type: e?.kind || "solar", time: e.peak?.toString?.() || String(e.peak), magnitude: e?.obs?.mag || null, path: "local" });
